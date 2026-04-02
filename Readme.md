@@ -7,7 +7,7 @@
 **LyricsOnMacOSBar** 是一款专为 macOS Apple Music 打造的轻量级菜单栏歌词插件。
 采用 Swift & SwiftUI 原生开发，拥有极简的 UI 设计、多重数据源回退机制以及零延迟的播放控制体验。
 
-本项目所有代码及icon均来自**Google Gemini 3.1 Pro**。
+本项目所有代码及icon均来自**Gemini 3.1 Pro**。
 
 本项目编译于macOS 26.4，Minimum Deployments版本为macOS 15.6，仅在macOS 26.4上可正常运行，未测试其他版本。
 
