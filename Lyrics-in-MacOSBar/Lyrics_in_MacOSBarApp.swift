@@ -119,11 +119,11 @@ struct LyricsOnMacOSBarApp: App {
         let alert = NSAlert()
         if let appIcon = NSImage(named: "AppIcon") { alert.icon = appIcon }
         alert.messageText = "关于 LyricsOnMacOSBar"
-        alert.informativeText = "开发者: 何旺霖\n\n【开源与免费声明】\n本软件为 GitHub 上的开源免费项目，代码完全公开。严禁任何个人或组织将本软件用于商业牟利、二次打包或倒卖行为。\n\n【免责声明】\n本软件仅作个人编程学习与技术交流使用。软件本身不提供、不存储任何音乐资源。作者不对使用本软件抓取网络歌词的数据准确性、潜在的版权纠纷，以及由此引发的任何直接或间接损失承担法律责任。"
-        alert.addButton(withTitle: "访问 GitHub 主页")
+        alert.informativeText = "开发者: motian566\n\n【开源与免费声明】\n本软件为 GitHub 上的开源免费项目，代码完全公开。严禁任何个人或组织将本软件用于商业牟利、二次打包或倒卖行为。\n仓库地址：https://github.com/motian566/LyricsOnMacOSBar\n\n【免责声明】\n本软件仅作个人编程学习与技术交流使用。软件本身不提供、不存储任何音乐资源。作者不对使用本软件抓取网络歌词的数据准确性、潜在的版权纠纷，以及由此引发的任何直接或间接损失承担法律责任。"
         alert.addButton(withTitle: "我知道了")
+        alert.addButton(withTitle: "访问 GitHub 主页")
         NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertFirstButtonReturn {
+        if alert.runModal() == .alertSecondButtonReturn {
             if let url = URL(string: "https://github.com/motian566/LyricsOnMacOsBar") {
                 NSWorkspace.shared.open(url)
             }
