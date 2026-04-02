@@ -124,7 +124,7 @@ struct LyricsOnMacOSBarApp: App {
         alert.addButton(withTitle: "访问 GitHub 主页")
         NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertSecondButtonReturn {
-            if let url = URL(string: "https://github.com/motian566/LyricsOnMacOsBar") {
+            if let url = URL(string: "https://github.com/motian566/LyricsOnMacOSBar") {
                 NSWorkspace.shared.open(url)
             }
         }
