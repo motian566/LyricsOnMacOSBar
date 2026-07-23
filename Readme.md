@@ -8,7 +8,7 @@
 **LyricsOnMacOSBar** 是一款专为 macOS Apple Music & Spotify 打造的轻量级菜单栏歌词插件。
 采用 Swift & SwiftUI 原生开发，拥有极简的 UI 设计、多重数据源回退机制以及零延迟的播放控制体验。
 
-本项目所有代码及 icon 均来自 ![Google Gemini](https://img.shields.io/badge/google%20gemini%203.1 Pro-8E75B2?style=for-the-badge&logo=google%20gemini&logoColor=white)。
+本项目所有代码及 icon 均来自 ![Google Gemini](https://img.shields.io/badge/google%20gemini%203.1%20Pro-8E75B2?style=for-the-badge&logo=google%20gemini&logoColor=white)。
 
 本项目编译于 macOS 26.5，最低部署版本为 macOS 15.6，仅测试 macOS 26.5 上可正常运行，未测试其他版本。
 
