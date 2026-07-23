@@ -94,15 +94,23 @@ class MusicMonitor: ObservableObject {
             isFetching = true
             
             scriptQueue.async {
-                // AppleScript 脚本：优先检测 Apple Music，如果没有播放再检测 Spotify
-                let script = """
+                // 🌟 1. 降维打击：使用 Swift 原生 API 秒查运行状态，无需任何权限！
+                let runningBundleIDs = NSWorkspace.shared.runningApplications.compactMap { $0.bundleIdentifier }
+                let isMusicRunning = runningBundleIDs.contains("com.apple.Music")
+                let isSpotifyRunning = runningBundleIDs.contains("com.spotify.client")
+                
+                // 🌟 2. 动态构建 AppleScript：只拼接真实在运行的软件，完美避开编译器查字典报错
+                var script = """
                 set current_player to "None"
                 set track_name to ""
                 set track_artist to ""
                 set track_position to 0
                 set track_duration to 0
-
-                if application "Music" is running then
+                \n
+                """
+                
+                if isMusicRunning {
+                    script += """
                     tell application "Music"
                         try
                             if player state is playing then
@@ -114,23 +122,30 @@ class MusicMonitor: ObservableObject {
                             end if
                         end try
                     end tell
-                end if
-
-                if current_player is "None" and application "Spotify" is running then
-                    tell application "Spotify"
-                        try
-                            if player state is playing then
-                                set current_player to "Spotify"
-                                set track_name to name of current track
-                                set track_artist to artist of current track
-                                set track_position to player position
-                                -- ⚠️ Spotify API 返回的时长是毫秒，需要除以 1000 对齐苹果的秒数
-                                set track_duration to (duration of current track) / 1000
-                            end if
-                        end try
-                    end tell
-                end if
-
+                    \n
+                    """
+                }
+                
+                if isSpotifyRunning {
+                    script += """
+                    if current_player is "None" then
+                        tell application "Spotify"
+                            try
+                                if player state is playing then
+                                    set current_player to "Spotify"
+                                    set track_name to name of current track
+                                    set track_artist to artist of current track
+                                    set track_position to player position
+                                    set track_duration to (duration of current track) / 1000
+                                end if
+                            end try
+                        end tell
+                    end if
+                    \n
+                    """
+                }
+                
+                script += """
                 if current_player is "None" then
                     return "Stopped"
                 else
@@ -138,6 +153,7 @@ class MusicMonitor: ObservableObject {
                 end if
                 """
                 
+                // 3. 执行安全的动态脚本
                 let res = self.executeAppleScript(script)
                 
                 DispatchQueue.main.async { [weak self] in
