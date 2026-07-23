@@ -5,7 +5,6 @@
 //  Created by 何旺霖 on 2026/5/14.
 //
 
-
 import SwiftUI
 import AppKit
 
@@ -21,6 +20,7 @@ struct LyricsOnMacOSBarApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    static private(set) var shared: AppDelegate!
     var statusItem: NSStatusItem!
     var popover: NSPopover!
     
@@ -28,6 +28,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let lyricManager = LyricManager()
     
     var eventMonitor: Any?
+    
+    // ⚠️ 核心修复：保持对关于窗口的强引用，防止被 ARC 误杀引发 EXC_BAD_ACCESS 崩溃
+    var aboutWindow: NSWindow?
+    override init() {
+            super.init()
+            AppDelegate.shared = self
+        }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         popover = NSPopover()
@@ -36,7 +43,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: MenuContentView(musicMonitor: monitor, lyricManager: lyricManager)
         )
 
-        // 启动时只创建一次状态栏图标
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.isVisible = false
         
@@ -45,7 +51,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             btn.target = self
             btn.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: nil)
             btn.imagePosition = .imageLeft
-            // 去除了 wantsLayer，不需要做动画了
         }
 
         monitor.onStateChange = { [weak self] isPlaying, lyric in
@@ -56,13 +61,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func updateMenuBar(isPlaying: Bool, lyric: String) {
         if isPlaying {
             if let btn = statusItem.button {
-                // 🔪 已经移除了所有动画，歌词直接赋值，做到零延迟卡点切换！
                 if btn.title != lyric {
                     btn.title = lyric
                 }
             }
-            
-            // 依然保留底层的显示机制，防止黑块和崩溃
             if !statusItem.isVisible {
                 statusItem.isVisible = true
             }
@@ -86,46 +88,66 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    // ⚠️ 核心修复：分离出单独的 Show 方法
-        func showPopover(sender: AnyObject?) {
-            guard let button = statusItem.button else { return }
-            
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            
-            // 1. 强行把咱们的后台 App 提权到前台活跃状态，以便接收系统事件
-            NSApp.activate(ignoringOtherApps: true)
-            popover.contentViewController?.view.window?.makeKey()
-            
-            // 2. 埋下全局鼠标监听雷达。只要在屏幕任何地方点了左/右键，强行关闭窗口
-            if eventMonitor == nil {
-                eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
-                    if let popover = self?.popover, popover.isShown {
-                        self?.closePopover(sender: event)
-                    }
+    func showPopover(sender: AnyObject?) {
+        guard let button = statusItem.button else { return }
+        
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        NSApp.activate(ignoringOtherApps: true)
+        popover.contentViewController?.view.window?.makeKey()
+        
+        if eventMonitor == nil {
+            eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+                if let popover = self?.popover, popover.isShown {
+                    self?.closePopover(sender: event)
                 }
             }
         }
+    }
         
-        // ⚠️ 核心修复：分离出单独的 Close 方法
-        func closePopover(sender: AnyObject?) {
-            popover.performClose(sender)
-            
-            // 窗口关掉后，一定要把监听器拆除，否则会造成内存泄漏，导致电脑越用越卡
-            if let monitor = eventMonitor {
-                NSEvent.removeMonitor(monitor)
-                eventMonitor = nil
-            }
+    func closePopover(sender: AnyObject?) {
+        popover.performClose(sender)
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
         }
     }
+    
+    // 🌟 创建并管理独立悬浮窗
+    func showAboutWindow() {
+        if aboutWindow == nil {
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 320, height: 400),
+                styleMask: [.titled, .closable, .fullSizeContentView],
+                backing: .buffered,
+                defer: false
+            )
+            
+            window.title = "About LyricsOnMacOSBar"
+            window.titlebarAppearsTransparent = true
+            window.titleVisibility = .hidden
+            window.isMovableByWindowBackground = true
+            window.backgroundColor = .clear
+            window.isOpaque = false
+            window.hasShadow = true
+            // ⚠️ 核心修复：明确告知系统关闭时不要销毁实例，由我们自己管理内存
+            window.isReleasedWhenClosed = false
+            
+            let hostingController = NSHostingController(rootView: AboutView())
+            window.contentViewController = hostingController
+            window.center()
+            
+            self.aboutWindow = window
+        }
+        
+        aboutWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+}
 
-
-
-// === 下方 UI 视图代码替换原有的 MenuContentView ===
 struct MenuContentView: View {
     @ObservedObject var musicMonitor: MusicMonitor
     let lyricManager: LyricManager
     
-    // 拆分两个输入框状态，分别对应不同的 Token
     @State private var inputUserToken: String = UserDefaults.standard.string(forKey: "AppleMusicMediaUserToken") ?? ""
     @State private var inputDevToken: String = UserDefaults.standard.string(forKey: "AppleMusicDeveloperToken") ?? ""
     @State private var showSettings: Bool = false
@@ -164,7 +186,7 @@ struct MenuContentView: View {
             
             Divider()
             
-            // ⚠️ 更新：双 Token 设置区域
+            // ⚠️ 恢复：双 Token 设置区域保留在主菜单中
             VStack(alignment: .leading, spacing: 8) {
                 Button(action: { showSettings.toggle() }) {
                     HStack {
@@ -180,8 +202,6 @@ struct MenuContentView: View {
 
                 if showSettings {
                     VStack(spacing: 12) {
-                        
-                        // 基础 Developer Token
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Developer Token (基础鉴权凭证):")
                                 .font(.system(size: 10))
@@ -191,7 +211,6 @@ struct MenuContentView: View {
                                 .font(.system(size: 10))
                         }
                         
-                        // 会员 VIP Token
                         VStack(alignment: .leading, spacing: 4) {
                             Text("media-user-token (解锁动态逐字歌词):")
                                 .font(.system(size: 10))
@@ -208,7 +227,6 @@ struct MenuContentView: View {
                             
                             let haptic = NSHapticFeedbackManager.defaultPerformer
                             haptic.perform(.generic, performanceTime: .now)
-                            
                             showSettings = false
                         }) {
                             Text("保存并应用")
@@ -231,7 +249,10 @@ struct MenuContentView: View {
                     .padding(.vertical, 6).padding(.horizontal, 16).contentShape(Rectangle())
                 }.buttonStyle(.plain)
                 
-                Button(action: { showAboutWindow() }) {
+                Button(action: {
+                    AppDelegate.shared.showAboutWindow()
+                    AppDelegate.shared.closePopover(sender: nil)
+                }) {
                     HStack { Text("关于 LyricsOnMacOSBar"); Spacer() }
                     .padding(.vertical, 6).padding(.horizontal, 16).contentShape(Rectangle())
                 }.buttonStyle(.plain)
@@ -243,37 +264,6 @@ struct MenuContentView: View {
             }
             .padding(.vertical, 8)
         }
-        .frame(width: 280) // 略微调宽一点点以适应双标题
-    }
-    
-    private func showAboutWindow() {
-        let alert = NSAlert()
-        if let appIcon = NSImage(named: "AppIcon") { alert.icon = appIcon }
-        alert.messageText = "关于 LyricsOnMacOSBar"
-        alert.informativeText = """
-                版本 / Version: 1.8.2
-                开发者 / Developer: motian566
-                邮箱 / Email: h894734566@163.com
-                
-                【开源声明 / MIT License】
-                本软件为基于 MIT 协议进行开源。你可以自由地使用、复制、修改、合并、出版发行、散布、再授权及贩售本软件及其副本，只需按协议规定保留版权声明。
-                仓库地址：https://github.com/motian566/LyricsOnMacOSBar
-                
-                【致谢 / Acknowledgements】
-                Apple Music 官方歌词的 API 获取与解析逻辑，翻译/移植自基于 MIT 协议的开源项目：
-                Manzana-Apple-Music-Lyrics (作者: dropcreations)
-                https://github.com/dropcreations/Manzana-Apple-Music-Lyrics
-                
-                【免责声明 / Disclaimer】
-                本软件仅作个人编程学习与技术交流使用。软件本身不提供、不存储任何音乐资源。作者不对使用本软件抓取网络歌词的数据准确性、潜在的版权纠纷，以及由此引发的任何直接或间接损失承担法律责任。
-                """
-        alert.addButton(withTitle: "我知道了")
-        alert.addButton(withTitle: "访问 GitHub 主页")
-        NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertSecondButtonReturn {
-            if let url = URL(string: "https://github.com/motian566/LyricsOnMacOSBar") {
-                NSWorkspace.shared.open(url)
-            }
-        }
+        .frame(width: 280)
     }
 }
