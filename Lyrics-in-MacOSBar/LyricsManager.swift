@@ -64,8 +64,16 @@ class LyricManager {
         return rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
-    // 🌟 终极防弹方案：硬编码的苹果官方基础开发者 Token (长期有效，彻底告别爬虫与风控拦截)
-    private let staticDeveloperToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNzgxMDMyODU1LCJleHAiOjE3ODQwNTY4NTUsInJvb3RfaHR0cHNfb3JpZ2luIjpbImFwcGxlLmNvbSJdfQ.fiMFcJWkfSlxKP9NVA0UW9CbItD1Rge0SISuepz203XcpU762OqdCpU9M-YkmtKkjRmaIWtjsfGgqZPrlMonpA"
+    // 🌟 基础开发者 Token (优先读取用户填写的，如果没有则使用内置长期有效的兜底 Token)
+    private var myDeveloperToken: String {
+        let rawToken = UserDefaults.standard.string(forKey: "AppleMusicDeveloperToken") ?? ""
+        let trimmed = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            // 内置兜底 Token
+            return "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNzgzNDA1OTU1LCJleHAiOjE3ODY0Mjk5NTUsInJvb3RfaHR0cHNfb3JpZ2luIjpbImFwcGxlLmNvbSJdfQ.X5XtoYobneo0Z8yi9cXHMA7JckjSJUUTtAnNUTuPZAG30TxgMBzgHJuGsgBM4uLeWdoFsuTztKBB212izvwJiw"
+        }
+        return trimmed
+    }
     
     // 🌐 完美伪装：原汁原味的 Mac Safari User-Agent
     private let browserUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
@@ -218,8 +226,8 @@ class LyricManager {
     
     // 🌟 核心极简获取 Token 逻辑
     private func getAppleMusicToken() async -> String? {
-        // 直接返回完美抓取的开发者 Token，跳过所有解析步骤！
-        return staticDeveloperToken
+        // 直接返回动态属性（优先用户输入 -> 其次内置默认），跳过所有解析步骤！
+        return myDeveloperToken
     }
     
     private func parseTTML(_ ttml: String) -> [ParsedLyricLine] {

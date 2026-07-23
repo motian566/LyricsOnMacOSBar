@@ -120,12 +120,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 
 
-// === 下方 UI 视图代码保持原样 ===
+// === 下方 UI 视图代码替换原有的 MenuContentView ===
 struct MenuContentView: View {
     @ObservedObject var musicMonitor: MusicMonitor
     let lyricManager: LyricManager
     
-    @State private var inputToken: String = UserDefaults.standard.string(forKey: "AppleMusicMediaUserToken") ?? ""
+    // 拆分两个输入框状态，分别对应不同的 Token
+    @State private var inputUserToken: String = UserDefaults.standard.string(forKey: "AppleMusicMediaUserToken") ?? ""
+    @State private var inputDevToken: String = UserDefaults.standard.string(forKey: "AppleMusicDeveloperToken") ?? ""
     @State private var showSettings: Bool = false
     
     var body: some View {
@@ -162,56 +164,66 @@ struct MenuContentView: View {
             
             Divider()
             
-            // ⚠️ 新增：Token 设置区域
+            // ⚠️ 更新：双 Token 设置区域
             VStack(alignment: .leading, spacing: 8) {
-                            // 1. 去掉 withAnimation，让展开动作瞬间完成
-                            Button(action: { showSettings.toggle() }) {
-                                HStack {
-                                    Text("Apple Music 订阅 token 设置")
-                                    Spacer()
-                                    // 2. 将动画仅作用于右侧箭头图标的旋转上
-                                    Image(systemName: showSettings ? "chevron.up" : "chevron.down")
-                                                                .font(.system(size: 13, weight: .semibold)) // 固定字重和大小
-                                                                .frame(width: 16, alignment: .center)
-                                                                // 取消所有绑定在这个图标上的动画
-                                                                .animation(nil, value: showSettings)
-                                                        }
-                                .padding(.vertical, 6).padding(.horizontal, 16).contentShape(Rectangle())
-                            }.buttonStyle(.plain)
+                Button(action: { showSettings.toggle() }) {
+                    HStack {
+                        Text("Apple Music 接口凭证设置")
+                        Spacer()
+                        Image(systemName: showSettings ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 13, weight: .semibold))
+                            .frame(width: 16, alignment: .center)
+                            .animation(nil, value: showSettings)
+                    }
+                    .padding(.vertical, 6).padding(.horizontal, 16).contentShape(Rectangle())
+                }.buttonStyle(.plain)
 
-                            if showSettings {
-                                VStack(spacing: 10) {
-                                    Text("请输入 media-user-token 以获取官方歌词：")
-                                        .font(.system(size: 10))
-                                        .foregroundColor(.secondary)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                    
-                                    TextField("粘贴 Token 到这里...", text: $inputToken)
-                                        .textFieldStyle(.roundedBorder)
-                                        .font(.system(size: 11))
-                                    
-                                    Button(action: {
-                                        UserDefaults.standard.set(inputToken, forKey: "AppleMusicMediaUserToken")
-                                        musicMonitor.reFetchLyrics()
-                                        
-                                        let haptic = NSHapticFeedbackManager.defaultPerformer
-                                        haptic.perform(.generic, performanceTime: .now)
-                                        
-                                        // 3. 去掉 withAnimation，瞬间收起
-                                        showSettings = false
-                                    }) {
-                                        Text("保存并应用")
-                                            .frame(maxWidth: .infinity)
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .controlSize(.small)
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.bottom, 12)
-                            }
+                if showSettings {
+                    VStack(spacing: 12) {
+                        
+                        // 基础 Developer Token
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Developer Token (基础鉴权凭证):")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                            TextField("留空则使用内置默认凭证...", text: $inputDevToken)
+                                .textFieldStyle(.roundedBorder)
+                                .font(.system(size: 10))
                         }
+                        
+                        // 会员 VIP Token
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("media-user-token (解锁动态逐字歌词):")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                            TextField("粘贴会员 Token 到这里...", text: $inputUserToken)
+                                .textFieldStyle(.roundedBorder)
+                                .font(.system(size: 10))
+                        }
+                        
+                        Button(action: {
+                            UserDefaults.standard.set(inputDevToken, forKey: "AppleMusicDeveloperToken")
+                            UserDefaults.standard.set(inputUserToken, forKey: "AppleMusicMediaUserToken")
+                            musicMonitor.reFetchLyrics()
+                            
+                            let haptic = NSHapticFeedbackManager.defaultPerformer
+                            haptic.perform(.generic, performanceTime: .now)
+                            
+                            showSettings = false
+                        }) {
+                            Text("保存并应用")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .padding(.top, 4)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                }
+            }
             
-                        Divider()
+            Divider()
             
             VStack(spacing: 4) {
                 Button(action: { NSWorkspace.shared.open(lyricManager.localFolderURL) }) {
@@ -231,7 +243,7 @@ struct MenuContentView: View {
             }
             .padding(.vertical, 8)
         }
-        .frame(width: 260)
+        .frame(width: 280) // 略微调宽一点点以适应双标题
     }
     
     private func showAboutWindow() {
@@ -239,7 +251,7 @@ struct MenuContentView: View {
         if let appIcon = NSImage(named: "AppIcon") { alert.icon = appIcon }
         alert.messageText = "关于 LyricsOnMacOSBar"
         alert.informativeText = """
-                版本 / Version: 1.8.0
+                版本 / Version: 1.8.2
                 开发者 / Developer: motian566
                 邮箱 / Email: h894734566@163.com
                 
