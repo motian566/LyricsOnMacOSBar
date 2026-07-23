@@ -3,7 +3,7 @@
 ![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)
 ![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
-![Version](https://img.shields.io/badge/Version-1.8.0-success.svg)
+![Version](https://img.shields.io/badge/Version-1.8.2-success.svg)
 
 **LyricsOnMacOSBar** 是一款专为 macOS Apple Music 打造的轻量级菜单栏歌词插件。
 采用 Swift & SwiftUI 原生开发，拥有极简的 UI 设计、多重数据源回退机制以及零延迟的播放控制体验。
