@@ -90,36 +90,63 @@ class MusicMonitor: ObservableObject {
     }
     
     func fetchCurrentTrackInfo() {
-        guard !isFetching else { return }
-        isFetching = true
-        
-        scriptQueue.async {
-            let script = """
-            if application "Music" is running then
-                tell application "Music"
-                    try
-                        if player state is playing then
-                            return "Playing|||" & (name of current track) & "|||" & (artist of current track) & "|||" & (player position) & "|||" & (duration of current track)
-                        else
-                            return "Paused"
-                        end if
-                    on error
-                        return "Error"
-                    end try
-                end tell
-            end if
-            return "Stopped"
-            """
+            guard !isFetching else { return }
+            isFetching = true
             
-            let res = self.executeAppleScript(script)
-            
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                self.handleResult(res)
-                self.isFetching = false
+            scriptQueue.async {
+                // AppleScript 脚本：优先检测 Apple Music，如果没有播放再检测 Spotify
+                let script = """
+                set current_player to "None"
+                set track_name to ""
+                set track_artist to ""
+                set track_position to 0
+                set track_duration to 0
+
+                if application "Music" is running then
+                    tell application "Music"
+                        try
+                            if player state is playing then
+                                set current_player to "Music"
+                                set track_name to name of current track
+                                set track_artist to artist of current track
+                                set track_position to player position
+                                set track_duration to duration of current track
+                            end if
+                        end try
+                    end tell
+                end if
+
+                if current_player is "None" and application "Spotify" is running then
+                    tell application "Spotify"
+                        try
+                            if player state is playing then
+                                set current_player to "Spotify"
+                                set track_name to name of current track
+                                set track_artist to artist of current track
+                                set track_position to player position
+                                -- ⚠️ Spotify API 返回的时长是毫秒，需要除以 1000 对齐苹果的秒数
+                                set track_duration to (duration of current track) / 1000
+                            end if
+                        end try
+                    end tell
+                end if
+
+                if current_player is "None" then
+                    return "Stopped"
+                else
+                    return "Playing|||" & track_name & "|||" & track_artist & "|||" & track_position & "|||" & track_duration
+                end if
+                """
+                
+                let res = self.executeAppleScript(script)
+                
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.handleResult(res)
+                    self.isFetching = false
+                }
             }
         }
-    }
     
     private func handleResult(_ res: String) {
         if res == "Stopped" || res == "Paused" || res == "Error" {
@@ -199,16 +226,28 @@ class MusicMonitor: ObservableObject {
     }
     
     func togglePlayPause() {
-        scriptQueue.async { self.executeAppleScriptAction("tell application \"Music\" to playpause") }
-    }
-    
-    func previousTrack() {
-        DispatchQueue.main.async { self.currentLyricLine = "切换中..." }
-        scriptQueue.async { self.executeAppleScriptAction("tell application \"Music\" to previous track") }
-    }
-    
-    func nextTrack() {
-        DispatchQueue.main.async { self.currentLyricLine = "切换中..." }
-        scriptQueue.async { self.executeAppleScriptAction("tell application \"Music\" to next track") }
-    }
+            let script = """
+            if application "Music" is running then tell application "Music" to playpause
+            if application "Spotify" is running then tell application "Spotify" to playpause
+            """
+            scriptQueue.async { self.executeAppleScriptAction(script) }
+        }
+        
+        func previousTrack() {
+            DispatchQueue.main.async { self.currentLyricLine = "切换中..." }
+            let script = """
+            if application "Music" is running then tell application "Music" to previous track
+            if application "Spotify" is running then tell application "Spotify" to previous track
+            """
+            scriptQueue.async { self.executeAppleScriptAction(script) }
+        }
+        
+        func nextTrack() {
+            DispatchQueue.main.async { self.currentLyricLine = "切换中..." }
+            let script = """
+            if application "Music" is running then tell application "Music" to next track
+            if application "Spotify" is running then tell application "Spotify" to next track
+            """
+            scriptQueue.async { self.executeAppleScriptAction(script) }
+        }
 }

@@ -40,7 +40,7 @@ struct AboutView: View {
                     .foregroundColor(.secondary)
             }
             
-            Text("一款专为 macOS Apple Music 打造的\n极简菜单栏歌词插件")
+            Text("一款 macOS 的\nApple Music & Spotify\n极简菜单栏歌词插件")
                 .font(.system(size: 13))
                 .multilineTextAlignment(.center)
                 .foregroundColor(.primary.opacity(0.8))
