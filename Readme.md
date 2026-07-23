@@ -29,7 +29,7 @@
 
 ### 方式一：直接下载运行
 1. 进入本仓库的 [Releases](https://github.com/motian566/LyricsOnMacOSBar/releases) 页面。
-2. 下载最新版本的 `LyricsOnMacOSBar-v1.8.3.dmg`。
+2. 下载最新版本的 `LyricsOnMacOSBar-v1.8.4.dmg`。
 3. 将 `.app` 文件拖入 `应用程序 (Applications)` 文件夹。
 4. **解除系统限制**：由于个人开源项目未购买苹果开发者签名，初次运行可能会提示“软件已损坏”。请打开**终端 (Terminal)**，输入以下命令并回车：
    
