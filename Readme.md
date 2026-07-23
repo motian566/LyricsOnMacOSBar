@@ -3,7 +3,7 @@
 ![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)
 ![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
-![Version](https://img.shields.io/badge/Version-1.8.3-success.svg)
+![Version](https://img.shields.io/badge/Version-1.8.4-success.svg)
 
 **LyricsOnMacOSBar** 是一款专为 macOS Apple Music & Spotify 打造的轻量级菜单栏歌词插件。
 采用 Swift & SwiftUI 原生开发，拥有极简的 UI 设计、多重数据源回退机制以及零延迟的播放控制体验。
@@ -28,7 +28,7 @@
 ## 🚀 快速开始
 
 ### 方式一：直接下载运行
-1. 进入本仓库的 [Releases](https://github.com/motian566/LyricsOnMacOSBar/releases/tag/v1.8.3) 页面。
+1. 进入本仓库的 [Releases](https://github.com/motian566/LyricsOnMacOSBar/releases) 页面。
 2. 下载最新版本的 `LyricsOnMacOSBar-v1.8.3.dmg`。
 3. 将 `.app` 文件拖入 `应用程序 (Applications)` 文件夹。
 4. **解除系统限制**：由于个人开源项目未购买苹果开发者签名，初次运行可能会提示“软件已损坏”。请打开**终端 (Terminal)**，输入以下命令并回车：
