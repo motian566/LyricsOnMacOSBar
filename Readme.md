@@ -3,9 +3,9 @@
 ![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)
 ![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
-![Version](https://img.shields.io/badge/Version-1.8.2-success.svg)
+![Version](https://img.shields.io/badge/Version-1.8.3-success.svg)
 
-**LyricsOnMacOSBar** 是一款专为 macOS Apple Music 打造的轻量级菜单栏歌词插件。
+**LyricsOnMacOSBar** 是一款专为 macOS Apple Music & Spotify 打造的轻量级菜单栏歌词插件。
 采用 Swift & SwiftUI 原生开发，拥有极简的 UI 设计、多重数据源回退机制以及零延迟的播放控制体验。
 
 本项目所有代码及 icon 均来自 **Gemini 3.1 Pro**。
@@ -28,8 +28,8 @@
 ## 🚀 快速开始
 
 ### 方式一：直接下载运行
-1. 进入本仓库的 [Releases](#) 页面。
-2. 下载最新版本的 `LyricsOnMacOSBar-v1.8.0.dmg`。
+1. 进入本仓库的 [Releases](https://github.com/motian566/LyricsOnMacOSBar/releases/tag/v1.8.3) 页面。
+2. 下载最新版本的 `LyricsOnMacOSBar-v1.8.3.dmg`。
 3. 将 `.app` 文件拖入 `应用程序 (Applications)` 文件夹。
 4. **解除系统限制**：由于个人开源项目未购买苹果开发者签名，初次运行可能会提示“软件已损坏”。请打开**终端 (Terminal)**，输入以下命令并回车：
    
@@ -43,19 +43,22 @@
 
 ## 📁 Apple Music 歌词使用说明
 
-如果你是 Apple Music 的付费订阅用户，可以通过以下方式解锁官方歌词：
+如果你是 **Apple Music 付费订阅用户**，可以通过以下方式解锁官方歌词：
 
-1. 在 Mac 浏览器登录网页版 Apple Music。
-2. 按 `F12` 打开开发者工具，选择 **Network (网络)** 面板后**刷新页面**。
-3. 在 **Network (网络)** 搜索 `amp-api...` ，点击任一结果（如account），选择右侧**标头**，在其中找到`请求 - media-user-token`，复制 `media-user-token` 的值。
-4. 点击本软件的菜单栏图标，展开 **「Apple Music 订阅 token 设置」**，将 Token 粘贴并保存即可。
+1. 登录网页版 Apple Music。
+2. 按  `F12`  打开开发者工具，选择 **Network (网络)** 面板后**刷新页面**。
+3. 在 **Network (网络)** 中进行以下操作获取 media-user-token 和 DevToken：
+   1. 搜索关键词  `amp-api` ，点击任一结果（如account），选择右侧**标头**，在其中找到                   `请求 - media-user-token`，复制 `media-user-token` 的值。
+   2. 搜索关键词 `token`，点击 `fetch-proxy.html`，在其中找到 `查询字符串参数 - devToken`，复制 `dev-token` 的值。
+
+4. 点击本软件的菜单栏图标，展开 **「Apple Music 接口凭证设置」**，将两个 Token 粘贴到对应位置并点击保存即可。
 
 ## 📁 本地歌词使用说明
 
 如果你发现某些歌曲的网源时间轴完全对不上，你可以使用本地歌词功能：
 1. 点击菜单栏歌词图标，选择 **「打开本地歌词文件夹」**（默认路径为 `~/Documents/MacLyrics`）。
 2. 将准备好的 `.lrc` 歌词文件放入该文件夹中。
-3. **命名规范**：`歌名 - 歌手.lrc` 或 `歌名.lrc`（注意去除多余的后缀如 (Live版)）。
+3. **命名规范**：`歌名 - 歌手.lrc`  或  `歌名.lrc`（注意去除多余的后缀如 (Live版)）。
 4. 切换歌曲，系统将优先精准读取你的本地配置！
 
 ## 👨‍💻 开发者
